@@ -35,7 +35,7 @@ def start_local_lambdas(manifest_path, with_cache=False):
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env={**subprocess.os.environ, **env},
+        env={**os.environ, **env},
         cwd="/home/runner/work/local_lambdas/local_lambdas"
     )
     return process
@@ -99,9 +99,12 @@ def benchmark_requests(url, num_requests, description, measure_individual=False)
     # Calculate percentiles if measuring individual times
     min_time = min(individual_times) if individual_times else 0
     max_time = max(individual_times) if individual_times else 0
-    p50 = sorted(individual_times)[len(individual_times)//2] if individual_times else 0
-    p95 = sorted(individual_times)[int(len(individual_times)*0.95)] if individual_times else 0
-    p99 = sorted(individual_times)[int(len(individual_times)*0.99)] if individual_times else 0
+    
+    # Sort once for percentile calculations
+    sorted_times = sorted(individual_times) if individual_times else []
+    p50 = sorted_times[len(sorted_times)//2] if sorted_times else 0
+    p95 = sorted_times[int(len(sorted_times)*0.95)] if sorted_times else 0
+    p99 = sorted_times[int(len(sorted_times)*0.99)] if sorted_times else 0
     
     print(f"\nResults:")
     print(f"  Total time: {elapsed_time:.2f}s")

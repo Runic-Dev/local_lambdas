@@ -84,12 +84,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let processes_arc = Arc::new(processes);
     
     // Check if caching is enabled via environment variable
-    let cache_size = std::env::var("ENABLE_CACHE")
-        .ok()
+    let enable_cache_env = std::env::var("ENABLE_CACHE").ok();
+    let cache_size = enable_cache_env
+        .as_deref()
         .and_then(|v| v.parse::<u64>().ok())
         .or_else(|| {
             // Default to 1000 entries if ENABLE_CACHE is set to "true"
-            if std::env::var("ENABLE_CACHE").ok().as_deref() == Some("true") {
+            if enable_cache_env.as_deref() == Some("true") {
                 Some(1000)
             } else {
                 None
