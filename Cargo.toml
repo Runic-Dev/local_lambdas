@@ -24,6 +24,9 @@ thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Async
+async-trait = "0.1"
+
 # Named pipes (cross-platform)
 tokio-pipe = "0.2"
 

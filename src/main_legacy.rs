@@ -1,27 +1,17 @@
-/// Main entry point using Clean Architecture
-/// This file is part of the outermost layer (Frameworks & Drivers)
-
-mod domain;
-mod use_cases;
-mod adapters;
-mod infrastructure;
-
-// Legacy modules for backward compatibility
 mod config;
-mod orchestrator;
 mod pipes;
+mod orchestrator;
 mod proxy;
 
-use adapters::{XmlProcessRepository, TokioProcessOrchestrator, HttpServerState};
-use infrastructure::NamedPipeClient;
-use use_cases::{InitializeSystemUseCase, StartAllProcessesUseCase, StopAllProcessesUseCase, ProxyHttpRequestUseCase};
+use anyhow::{Context, Result};
+use config::Manifest;
+use orchestrator::ProcessOrchestrator;
+use proxy::ProxyState;
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::registry()
         .with(
@@ -31,9 +21,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tracing::info!("Starting Local Lambdas HTTP Proxy (Clean Architecture)");
+    tracing::info!("Starting Local Lambdas HTTP Proxy");
 
-    // Parse command line arguments
+    // Load manifest
     let manifest_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "manifest.xml".to_string());
@@ -47,49 +37,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     tracing::info!("Loading manifest from: {}", manifest_path.display());
+    let manifest = Manifest::from_file(&manifest_path)
+        .context("Failed to load manifest")?;
 
-    // ========== Dependency Injection Setup ==========
-    
-    // Infrastructure Layer
-    let process_repository = Arc::new(XmlProcessRepository::new(&manifest_path));
-    let pipe_service = Arc::new(NamedPipeClient::new());
-    
-    // Use Cases Layer
-    let init_use_case = InitializeSystemUseCase::new(process_repository.clone());
-    
-    // Execute initialization use case
-    let processes = init_use_case.execute().await?;
-    tracing::info!("Loaded {} process configuration(s)", processes.len());
+    tracing::info!("Loaded {} process configuration(s)", manifest.processes.len());
 
     // Create orchestrator and register processes
-    let mut orchestrator = TokioProcessOrchestrator::new();
-    for process in &processes {
+    let mut orchestrator = ProcessOrchestrator::new();
+    for config in &manifest.processes {
         tracing::info!("Registering process '{}': {} -> {}", 
-            process.id.as_str(), process.route.as_str(), process.executable.as_str());
-        orchestrator.register(process.clone());
+            config.id, config.route, config.executable);
+        orchestrator.register(config.clone());
     }
-    
-    let orchestrator = Arc::new(RwLock::new(orchestrator));
-    
-    // Use case for starting processes
-    let start_use_case = StartAllProcessesUseCase::new(orchestrator.clone());
-    
+
+    // Start all processes
     tracing::info!("Starting all processes...");
-    start_use_case.execute().await?;
+    orchestrator.start_all().await?;
 
     // Give processes time to start up
     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
-    // Create proxy use case
-    let processes_arc = Arc::new(processes);
-    let proxy_use_case = Arc::new(ProxyHttpRequestUseCase::new(
-        pipe_service.clone(),
-        processes_arc,
-    ));
-
-    // Adapters Layer - HTTP Server
-    let server_state = HttpServerState::new(proxy_use_case);
-    let app = server_state.create_router();
+    // Create HTTP proxy
+    let proxy_state = ProxyState::new(manifest.processes.clone());
+    let app = proxy::create_router(proxy_state);
 
     // Bind to address
     let addr = std::env::var("BIND_ADDRESS")
@@ -97,7 +67,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     tracing::info!("Starting HTTP proxy server on {}", addr);
     
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let listener = tokio::net::TcpListener::bind(&addr).await
+        .context("Failed to bind to address")?;
 
     tracing::info!("Local Lambdas HTTP Proxy is ready!");
     tracing::info!("Listening on http://{}", addr);
@@ -105,12 +76,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Run the server
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
-        .await?;
+        .await
+        .context("Server error")?;
 
     // Cleanup
     tracing::info!("Shutting down...");
-    let stop_use_case = StopAllProcessesUseCase::new(orchestrator);
-    stop_use_case.execute().await?;
+    orchestrator.stop_all().await?;
 
     Ok(())
 }
