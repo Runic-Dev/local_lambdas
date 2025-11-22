@@ -13,3 +13,8 @@
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.pdb
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.genruntimeconfig.cache
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/ref/PipeService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/PipeService/PipeService
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/PipeService/PipeService.deps.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/PipeService/PipeService.runtimeconfig.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/PipeService/PipeService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/PipeService/PipeService.pdb

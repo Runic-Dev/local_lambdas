@@ -3,10 +3,7 @@
     <!-- HTTP Communication Service -->
     <process>
         <id>http-service</id>
-        <executable>dotnet</executable>
-        <arg>run</arg>
-        <arg>--project</arg>
-        <arg>examples/dotnet-perf-test/HttpService/HttpService.csproj</arg>
+        <executable>examples/dotnet-perf-test/bin/HttpService/HttpService</executable>
         <route>/http/*</route>
         <pipe_name>dotnet_http</pipe_name>
         <communication_mode>http</communication_mode>
@@ -15,10 +12,7 @@
     <!-- Named Pipe Communication Service -->
     <process>
         <id>pipe-service</id>
-        <executable>dotnet</executable>
-        <arg>run</arg>
-        <arg>--project</arg>
-        <arg>examples/dotnet-perf-test/PipeService/PipeService.csproj</arg>
+        <executable>examples/dotnet-perf-test/bin/PipeService/PipeService</executable>
         <route>/pipe/*</route>
         <pipe_name>dotnet_pipe</pipe_name>
         <communication_mode>pipe</communication_mode>

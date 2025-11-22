@@ -13,3 +13,8 @@
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/HttpService/obj/Debug/net8.0/HttpService.pdb
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/HttpService/obj/Debug/net8.0/HttpService.genruntimeconfig.cache
 /home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/HttpService/obj/Debug/net8.0/ref/HttpService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/HttpService/HttpService
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/HttpService/HttpService.deps.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/HttpService/HttpService.runtimeconfig.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/HttpService/HttpService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/bin/HttpService/HttpService.pdb

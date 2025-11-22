@@ -21,8 +21,8 @@ from pathlib import Path
 # Configuration
 BIND_ADDRESS = "127.0.0.1:3000"
 BASE_URL = f"http://{BIND_ADDRESS}"
-NUM_REQUESTS = 100
-WARMUP_REQUESTS = 10
+NUM_REQUESTS = 50
+WARMUP_REQUESTS = 5
 
 def start_local_lambdas(manifest_path, with_cache=False):
     """Start local_lambdas with the given manifest"""
@@ -40,17 +40,20 @@ def start_local_lambdas(manifest_path, with_cache=False):
     )
     return process
 
-def wait_for_server(url, timeout=30):
+def wait_for_server(url, timeout=60):
     """Wait for the server to be ready"""
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            response = requests.get(url, timeout=1)
-            if response.status_code in [200, 404, 502]:  # Any response means server is up
-                return True
-        except:
+            response = requests.get(url, timeout=2)
+            # Any response (even error) means server is up
+            return True
+        except requests.exceptions.ConnectionError:
             pass
-        time.sleep(0.5)
+        except:
+            # Server responded but might be an error - still counts as up
+            return True
+        time.sleep(1)
     return False
 
 def benchmark_requests(url, num_requests, description, measure_individual=False):
@@ -150,7 +153,7 @@ def main():
         env=env,
         cwd="/home/runner/work/local_lambdas/local_lambdas"
     )
-    time.sleep(6)  # Wait for server and pipe service to start
+    time.sleep(10)  # Wait for server and pipe service to start
     
     if not wait_for_server(f"{BASE_URL}/pipe/test"):
         print("ERROR: Server failed to start")

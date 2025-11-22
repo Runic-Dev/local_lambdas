@@ -98,14 +98,16 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
     }
 
     /// Execute the use case: route request to appropriate process
+    /// Cache (if enabled) applies to both HTTP and named pipe communication modes
     pub async fn execute(&self, request: HttpRequest) -> Result<HttpResponse, UseCaseError> {
-        // Check cache if enabled
+        // Check cache if enabled (applies to both HTTP and pipe modes)
         if let Some(cache) = &self.cache {
             let cache_key = self.generate_cache_key(&request);
             if let Some(cached_response) = cache.get(&cache_key).await {
-                tracing::debug!("Cache hit for {}", request.path);
+                tracing::debug!("Cache hit for {} (no process communication needed)", request.path);
                 return Ok(cached_response);
             }
+            tracing::debug!("Cache miss for {}", request.path);
         }
 
         use crate::domain::entities::CommunicationMode;
