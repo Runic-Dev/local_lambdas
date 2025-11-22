@@ -139,6 +139,7 @@ async fn test_full_orchestration_lifecycle() {
         route: "/test/*".to_string(),
         pipe_name: "test_pipe".to_string(),
         working_dir: None,
+        communication_mode: "pipe".to_string(),
     };
     
     orchestrator.register(config);
@@ -170,6 +171,7 @@ async fn test_multiple_process_orchestration() {
             route: format!("/service{}/*", i),
             pipe_name: format!("pipe_{}", i),
             working_dir: None,
+            communication_mode: "pipe".to_string(),
         };
         orchestrator.register(config);
     }

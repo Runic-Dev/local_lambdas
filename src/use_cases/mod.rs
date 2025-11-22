@@ -82,6 +82,9 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
 
     /// Execute the use case: route request to appropriate process
     pub async fn execute(&self, request: HttpRequest) -> Result<HttpResponse, UseCaseError> {
+        use crate::domain::entities::CommunicationMode;
+        use crate::domain::utils::{get_pipe_address_from_name, get_http_address_from_name};
+        
         // Find matching process
         let process = self
             .find_matching_process(&request.path)
@@ -90,13 +93,19 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
         // Serialize request
         let request_data = self.serialize_request(&request)?;
 
-        // Get pipe address
-        let pipe_address = Self::get_pipe_address(process.pipe_name.as_str());
+        // Get address based on communication mode
+        let address = match process.communication_mode {
+            CommunicationMode::Pipe => get_pipe_address_from_name(process.pipe_name.as_str()),
+            CommunicationMode::Http => get_http_address_from_name(process.pipe_name.as_str()),
+        };
 
-        // Send request through pipe
+        tracing::debug!("Routing request to {} via {:?}: {}", 
+            process.id.as_str(), process.communication_mode, address);
+
+        // Send request through the communication channel
         let response_data = self
             .pipe_service
-            .send_request(&pipe_address, request_data)
+            .send_request(&address, request_data)
             .await
             .map_err(|e| UseCaseError::CommunicationError(e.to_string()))?;
 
@@ -156,15 +165,7 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
     }
 
     fn get_pipe_address(pipe_name: &str) -> String {
-        #[cfg(windows)]
-        {
-            format!(r"\\.\pipe\{}", pipe_name)
-        }
-
-        #[cfg(unix)]
-        {
-            format!("/tmp/{}", pipe_name)
-        }
+        crate::domain::utils::get_pipe_address_from_name(pipe_name)
     }
 }
 

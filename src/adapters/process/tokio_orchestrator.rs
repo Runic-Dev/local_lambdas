@@ -37,21 +37,16 @@ impl TokioProcessOrchestrator {
     }
 
     fn get_pipe_address(pipe_name: &str) -> String {
-        #[cfg(windows)]
-        {
-            format!(r"\\.\pipe\{}", pipe_name)
-        }
-
-        #[cfg(unix)]
-        {
-            format!("/tmp/{}", pipe_name)
-        }
+        crate::domain::utils::get_pipe_address_from_name(pipe_name)
     }
 }
 
 #[async_trait]
 impl ProcessOrchestrationService for TokioProcessOrchestrator {
     async fn start_process(&mut self, id: &ProcessId) -> Result<(), OrchestrationError> {
+        use crate::domain::entities::CommunicationMode;
+        use crate::domain::utils::{get_pipe_address_from_name, get_http_address_from_name};
+        
         let process = self
             .processes
             .get_mut(id)
@@ -61,9 +56,8 @@ impl ProcessOrchestrationService for TokioProcessOrchestrator {
             return Err(OrchestrationError::AlreadyRunning(id.as_str().to_string()));
         }
 
-        tracing::info!("Starting process '{}': {}", id.as_str(), process.config.executable.as_str());
-
-        let pipe_address = Self::get_pipe_address(process.config.pipe_name.as_str());
+        tracing::info!("Starting process '{}': {} (mode: {:?})", 
+            id.as_str(), process.config.executable.as_str(), process.config.communication_mode);
 
         let mut command = Command::new(process.config.executable.as_str());
         command.args(&process.config.arguments);
@@ -75,7 +69,19 @@ impl ProcessOrchestrationService for TokioProcessOrchestrator {
             command.current_dir(working_dir.as_str());
         }
 
-        command.env("PIPE_ADDRESS", &pipe_address);
+        // Set environment variable based on communication mode
+        match process.config.communication_mode {
+            CommunicationMode::Pipe => {
+                let pipe_address = get_pipe_address_from_name(process.config.pipe_name.as_str());
+                command.env("PIPE_ADDRESS", &pipe_address);
+                tracing::debug!("Using pipe address: {}", pipe_address);
+            }
+            CommunicationMode::Http => {
+                let http_address = get_http_address_from_name(process.config.pipe_name.as_str());
+                command.env("HTTP_ADDRESS", &http_address);
+                tracing::debug!("Using HTTP address: {}", http_address);
+            }
+        }
 
         let child = command
             .spawn()
@@ -163,6 +169,7 @@ mod tests {
             route: Route::new("/test").unwrap(),
             pipe_name: PipeName::new("test_pipe").unwrap(),
             working_directory: None,
+            communication_mode: crate::domain::entities::CommunicationMode::Pipe,
         }
     }
 

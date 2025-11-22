@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <!-- Performance test using named pipes - MINIMAL service with NO HTTP code -->
+    <process>
+        <id>perf-test-pipe</id>
+        <executable>python3</executable>
+        <arg>examples/perf-test-service/pipe_only_service.py</arg>
+        <route>/pipe/*</route>
+        <pipe_name>perf_test_pipe</pipe_name>
+        <communication_mode>pipe</communication_mode>
+    </process>
+    
+    <!-- Performance test using HTTP - service with HTTP server initialization -->
+    <process>
+        <id>perf-test-http</id>
+        <executable>python3</executable>
+        <arg>examples/perf-test-service/http_only_service.py</arg>
+        <route>/http/*</route>
+        <pipe_name>perf_test_http</pipe_name>
+        <communication_mode>http</communication_mode>
+    </process>
+</manifest>

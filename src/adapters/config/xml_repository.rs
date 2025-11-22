@@ -2,7 +2,7 @@
 /// This is an infrastructure adapter
 
 use crate::domain::repositories::{ProcessRepository, RepositoryError};
-use crate::domain::entities::{Process, ProcessId, Executable, Route, PipeName, WorkingDirectory};
+use crate::domain::entities::{Process, ProcessId, Executable, Route, PipeName, WorkingDirectory, CommunicationMode};
 use async_trait::async_trait;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -60,10 +60,18 @@ struct ProcessDto {
     pipe_name: String,
     #[serde(default)]
     working_dir: Option<String>,
+    #[serde(default)]
+    communication_mode: Option<String>,
 }
 
 impl ProcessDto {
     fn to_domain(self) -> Result<Process, String> {
+        let communication_mode = match self.communication_mode.as_deref() {
+            Some("http") => CommunicationMode::Http,
+            Some("pipe") | None => CommunicationMode::Pipe,
+            Some(other) => return Err(format!("Invalid communication mode: {}. Must be 'pipe' or 'http'", other)),
+        };
+        
         Ok(Process {
             id: ProcessId::new(self.id).map_err(|e| e.to_string())?,
             executable: Executable::new(self.executable).map_err(|e| e.to_string())?,
@@ -71,6 +79,7 @@ impl ProcessDto {
             route: Route::new(self.route).map_err(|e| e.to_string())?,
             pipe_name: PipeName::new(self.pipe_name).map_err(|e| e.to_string())?,
             working_directory: self.working_dir.map(WorkingDirectory::new),
+            communication_mode,
         })
     }
 }
