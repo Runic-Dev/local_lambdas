@@ -218,3 +218,183 @@ fn deserialize_response(data: Vec<u8>) -> anyhow::Result<Response> {
     
     Ok(response_builder.body(Body::from(body))?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::ProcessConfig;
+
+    fn create_test_config(id: &str, route: &str, pipe_name: &str) -> ProcessConfig {
+        ProcessConfig {
+            id: id.to_string(),
+            executable: "test".to_string(),
+            args: vec![],
+            route: route.to_string(),
+            pipe_name: pipe_name.to_string(),
+            working_dir: None,
+        }
+    }
+
+    #[test]
+    fn test_proxy_state_new() {
+        let configs = vec![
+            create_test_config("service1", "/api/*", "pipe1"),
+            create_test_config("service2", "/auth/*", "pipe2"),
+        ];
+
+        let state = ProxyState::new(configs);
+        assert_eq!(state.routes.len(), 2);
+    }
+
+    #[test]
+    fn test_matches_pattern_exact() {
+        assert!(ProxyState::matches_pattern("/api", "/api"));
+        assert!(ProxyState::matches_pattern("/api/test", "/api/test"));
+        assert!(!ProxyState::matches_pattern("/api", "/api/test"));
+    }
+
+    #[test]
+    fn test_matches_pattern_wildcard() {
+        // Wildcard patterns
+        assert!(ProxyState::matches_pattern("/api/test", "/api/*"));
+        assert!(ProxyState::matches_pattern("/api/test/foo", "/api/*"));
+        assert!(ProxyState::matches_pattern("/api/", "/api/*"));
+        assert!(!ProxyState::matches_pattern("/other/test", "/api/*"));
+        
+        // Root wildcard
+        assert!(ProxyState::matches_pattern("/anything", "/*"));
+        assert!(ProxyState::matches_pattern("/foo/bar", "/*"));
+    }
+
+    #[test]
+    fn test_matches_pattern_prefix() {
+        assert!(ProxyState::matches_pattern("/api/test", "/api/"));
+        assert!(ProxyState::matches_pattern("/api/", "/api/"));
+        assert!(!ProxyState::matches_pattern("/other", "/api/"));
+    }
+
+    #[test]
+    fn test_find_route() {
+        let configs = vec![
+            create_test_config("api", "/api/*", "api_pipe"),
+            create_test_config("auth", "/auth/*", "auth_pipe"),
+            create_test_config("root", "/*", "root_pipe"),
+        ];
+
+        let state = ProxyState::new(configs);
+
+        // Test exact matches
+        let route = state.find_route("/api/test");
+        assert!(route.is_some());
+        assert_eq!(route.unwrap().process_id, "api");
+
+        let route = state.find_route("/auth/login");
+        assert!(route.is_some());
+        assert_eq!(route.unwrap().process_id, "auth");
+
+        // Test fallback to root
+        let route = state.find_route("/other/path");
+        assert!(route.is_some());
+        assert_eq!(route.unwrap().process_id, "root");
+    }
+
+    #[test]
+    fn test_find_route_no_match() {
+        let configs = vec![
+            create_test_config("api", "/api/*", "api_pipe"),
+        ];
+
+        let state = ProxyState::new(configs);
+        let route = state.find_route("/other/path");
+        assert!(route.is_none());
+    }
+
+    #[test]
+    fn test_find_route_first_match() {
+        // When multiple patterns match, should return the first one
+        let configs = vec![
+            create_test_config("specific", "/api/test", "pipe1"),
+            create_test_config("wildcard", "/api/*", "pipe2"),
+        ];
+
+        let state = ProxyState::new(configs);
+        let route = state.find_route("/api/test");
+        assert!(route.is_some());
+        assert_eq!(route.unwrap().process_id, "specific");
+    }
+
+    #[test]
+    fn test_get_pipe_address() {
+        #[cfg(unix)]
+        {
+            let addr = ProxyState::get_pipe_address("test_pipe");
+            assert_eq!(addr, "/tmp/test_pipe");
+        }
+
+        #[cfg(windows)]
+        {
+            let addr = ProxyState::get_pipe_address("test_pipe");
+            assert_eq!(addr, r"\\.\pipe\test_pipe");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_serialize_request() {
+        let method = Method::GET;
+        let uri = Uri::from_static("http://example.com/test");
+        let headers = HeaderMap::new();
+        let body = Body::from("test body");
+
+        let result = serialize_request(method, uri, headers, body).await;
+        assert!(result.is_ok());
+
+        let data = result.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&data).unwrap();
+
+        assert_eq!(json["method"], "GET");
+        assert_eq!(json["uri"], "http://example.com/test");
+        assert!(json["body"].is_string());
+    }
+
+    #[test]
+    fn test_deserialize_response_success() {
+        let response_json = serde_json::json!({
+            "status": 200,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": general_purpose::STANDARD.encode(b"test response")
+        });
+
+        let data = serde_json::to_vec(&response_json).unwrap();
+        let result = deserialize_response(data);
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[test]
+    fn test_deserialize_response_with_status() {
+        let response_json = serde_json::json!({
+            "status": 404,
+            "headers": {},
+            "body": ""
+        });
+
+        let data = serde_json::to_vec(&response_json).unwrap();
+        let result = deserialize_response(data);
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn test_deserialize_response_invalid_json() {
+        let data = b"not json".to_vec();
+        let result = deserialize_response(data);
+        assert!(result.is_err());
+    }
+}
+

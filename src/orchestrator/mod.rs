@@ -157,3 +157,158 @@ impl Drop for ProcessOrchestrator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::ProcessConfig;
+
+    fn create_test_config(id: &str, executable: &str, pipe_name: &str) -> ProcessConfig {
+        ProcessConfig {
+            id: id.to_string(),
+            executable: executable.to_string(),
+            args: vec![],
+            route: "/test".to_string(),
+            pipe_name: pipe_name.to_string(),
+            working_dir: None,
+        }
+    }
+
+    #[test]
+    fn test_orchestrator_new() {
+        let orchestrator = ProcessOrchestrator::new();
+        assert!(orchestrator.processes.is_empty());
+    }
+
+    #[test]
+    fn test_register_process() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let config = create_test_config("test", "/bin/echo", "test_pipe");
+        
+        orchestrator.register(config.clone());
+        assert_eq!(orchestrator.processes.len(), 1);
+        assert!(orchestrator.processes.contains_key("test"));
+    }
+
+    #[test]
+    fn test_register_multiple_processes() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        
+        orchestrator.register(create_test_config("service1", "/bin/true", "pipe1"));
+        orchestrator.register(create_test_config("service2", "/bin/true", "pipe2"));
+        
+        assert_eq!(orchestrator.processes.len(), 2);
+        assert!(orchestrator.processes.contains_key("service1"));
+        assert!(orchestrator.processes.contains_key("service2"));
+    }
+
+    #[test]
+    fn test_is_running_not_started() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        orchestrator.register(create_test_config("test", "/bin/echo", "test_pipe"));
+        
+        assert!(!orchestrator.is_running("test"));
+    }
+
+    #[test]
+    fn test_is_running_unknown_process() {
+        let orchestrator = ProcessOrchestrator::new();
+        assert!(!orchestrator.is_running("unknown"));
+    }
+
+    #[tokio::test]
+    async fn test_start_process_success() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let mut config = create_test_config("test", "sleep", "test_pipe");
+        config.args = vec!["0.1".to_string()];
+        
+        orchestrator.register(config);
+        let result = orchestrator.start_process("test").await;
+        
+        assert!(result.is_ok());
+        assert!(orchestrator.is_running("test"));
+        
+        // Cleanup
+        orchestrator.stop_process("test").await.ok();
+    }
+
+    #[tokio::test]
+    async fn test_start_process_not_found() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let result = orchestrator.start_process("nonexistent").await;
+        
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_start_process_invalid_executable() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let config = create_test_config("test", "/nonexistent/binary", "test_pipe");
+        
+        orchestrator.register(config);
+        let result = orchestrator.start_process("test").await;
+        
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_stop_process() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let mut config = create_test_config("test", "sleep", "test_pipe");
+        config.args = vec!["10".to_string()];
+        
+        orchestrator.register(config);
+        orchestrator.start_process("test").await.ok();
+        
+        let result = orchestrator.stop_process("test").await;
+        assert!(result.is_ok());
+        assert!(!orchestrator.is_running("test"));
+    }
+
+    #[tokio::test]
+    async fn test_stop_process_not_running() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        orchestrator.register(create_test_config("test", "/bin/echo", "test_pipe"));
+        
+        let result = orchestrator.stop_process("test").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_stop_process_not_found() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        let result = orchestrator.stop_process("nonexistent").await;
+        
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_configs() {
+        let mut orchestrator = ProcessOrchestrator::new();
+        
+        orchestrator.register(create_test_config("service1", "/bin/true", "pipe1"));
+        orchestrator.register(create_test_config("service2", "/bin/true", "pipe2"));
+        
+        let configs = orchestrator.get_configs();
+        assert_eq!(configs.len(), 2);
+        
+        let ids: Vec<&str> = configs.iter().map(|c| c.id.as_str()).collect();
+        assert!(ids.contains(&"service1"));
+        assert!(ids.contains(&"service2"));
+    }
+
+    #[test]
+    fn test_get_pipe_address_static() {
+        #[cfg(unix)]
+        {
+            let addr = ProcessOrchestrator::get_pipe_address_static("test_pipe");
+            assert_eq!(addr, "/tmp/test_pipe");
+        }
+
+        #[cfg(windows)]
+        {
+            let addr = ProcessOrchestrator::get_pipe_address_static("test_pipe");
+            assert_eq!(addr, r"\\.\pipe\test_pipe");
+        }
+    }
+}
