@@ -1,10 +1,12 @@
 # local_lambdas
 
-A Rust-based HTTP proxy that orchestrates local processes and communicates with them via named pipes. This application allows you to configure and manage multiple executables that can handle HTTP requests through a centralized proxy server.
+A Rust-based HTTP proxy that orchestrates local processes and communicates with them via named pipes or HTTP. This application allows you to configure and manage multiple executables that can handle HTTP requests through a centralized proxy server.
 
 ## Features
 
+- **Flexible communication modes** - Support for both named pipes and HTTP communication
 - **Cross-platform named pipe communication** - Works on both Windows and Unix-like systems
+- **HTTP-based communication** - Option to use HTTP for inter-process communication
 - **XML-based configuration** - Easy-to-edit manifest.xml file for process management
 - **HTTP proxy server** - Routes HTTP requests to the appropriate process based on URL patterns
 - **Process orchestration** - Automatically starts and manages child processes
@@ -15,7 +17,7 @@ A Rust-based HTTP proxy that orchestrates local processes and communicates with 
 The application consists of four main components:
 
 1. **Config Module** - Parses the manifest.xml configuration file
-2. **Named Pipe Module** - Handles cross-platform named pipe communication
+2. **Communication Layer** - Handles both named pipe and HTTP communication
 3. **Process Orchestrator** - Manages the lifecycle of child processes
 4. **HTTP Proxy** - Routes incoming HTTP requests to the appropriate process
 
@@ -26,6 +28,7 @@ Create a `manifest.xml` file with your process configurations:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
+    <!-- Process using named pipes (default) -->
     <process>
         <id>api-service</id>
         <executable>./bin/api-service.exe</executable>
@@ -34,13 +37,16 @@ Create a `manifest.xml` file with your process configurations:
         <route>/api/*</route>
         <pipe_name>api_service_pipe</pipe_name>
         <working_dir>./services/api</working_dir>
+        <communication_mode>pipe</communication_mode>
     </process>
     
+    <!-- Process using HTTP communication -->
     <process>
         <id>auth-service</id>
         <executable>./bin/auth-service.exe</executable>
         <route>/auth/*</route>
-        <pipe_name>auth_service_pipe</pipe_name>
+        <pipe_name>auth_service_http</pipe_name>
+        <communication_mode>http</communication_mode>
     </process>
 </manifest>
 ```
@@ -51,8 +57,9 @@ Create a `manifest.xml` file with your process configurations:
 - **executable**: Path to the executable file
 - **arg**: Command-line argument (can have multiple)
 - **route**: HTTP URL pattern to match (supports wildcards with `/*`)
-- **pipe_name**: Name of the named pipe for communication
+- **pipe_name**: Name identifier for communication (used for pipe name or HTTP port generation)
 - **working_dir**: (Optional) Working directory for the process
+- **communication_mode**: (Optional) Communication mode - `pipe` (default) or `http`
 
 ## Usage
 
