@@ -259,6 +259,25 @@ The test will:
 
 5. **No HTTP dependencies verified**: The named pipe service was confirmed to have ZERO HTTP/web packages, proving it's truly minimal
 
+### Actual Performance Results
+
+**Note**: Detailed performance results with actual response times (average, P50, P95, P99) for each test case are automatically generated when you run the performance tests. The test script generates:
+
+- `performance_results.json` - Raw performance data in JSON format
+- `PERFORMANCE_RESULTS.md` - Comprehensive markdown report with:
+  - **Response time summary table** showing all test cases with avg/median/P95/P99 latencies
+  - **Detailed per-test metrics** including throughput and percentile breakdowns
+  - **Comparative analysis** between HTTP and Named Pipe modes
+
+To see the actual test results, run:
+```bash
+cd examples/dotnet-perf-test
+./run_performance_tests.py
+cat PERFORMANCE_RESULTS.md
+```
+
+The generated report includes a conclusion section with actual response times measured during the test run, providing concrete performance data for each of the 5 test scenarios.
+
 ### Recommendations
 
 - **Use named pipes** for minimal microservices that don't need HTTP frameworks
