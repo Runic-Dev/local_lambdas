@@ -3,6 +3,8 @@
 
 pub mod entities;
 pub mod repositories;
+pub mod utils;
 
 pub use entities::*;
 pub use repositories::*;
+pub use utils::*;

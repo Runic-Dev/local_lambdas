@@ -83,6 +83,7 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
     /// Execute the use case: route request to appropriate process
     pub async fn execute(&self, request: HttpRequest) -> Result<HttpResponse, UseCaseError> {
         use crate::domain::entities::CommunicationMode;
+        use crate::domain::utils::{get_pipe_address_from_name, get_http_address_from_name};
         
         // Find matching process
         let process = self
@@ -94,8 +95,8 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
 
         // Get address based on communication mode
         let address = match process.communication_mode {
-            CommunicationMode::Pipe => Self::get_pipe_address(process.pipe_name.as_str()),
-            CommunicationMode::Http => Self::get_http_address(process.pipe_name.as_str()),
+            CommunicationMode::Pipe => get_pipe_address_from_name(process.pipe_name.as_str()),
+            CommunicationMode::Http => get_http_address_from_name(process.pipe_name.as_str()),
         };
 
         tracing::debug!("Routing request to {} via {:?}: {}", 
@@ -164,24 +165,7 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
     }
 
     fn get_pipe_address(pipe_name: &str) -> String {
-        #[cfg(windows)]
-        {
-            format!(r"\\.\pipe\{}", pipe_name)
-        }
-
-        #[cfg(unix)]
-        {
-            format!("/tmp/{}", pipe_name)
-        }
-    }
-
-    fn get_http_address(pipe_name: &str) -> String {
-        // Use the same port generation logic as the orchestrator
-        let hash = pipe_name.bytes().fold(0u32, |acc, b| {
-            acc.wrapping_mul(31).wrapping_add(b as u32)
-        });
-        let port = 9000 + (hash % 1000) as u16;
-        format!("127.0.0.1:{}", port)
+        crate::domain::utils::get_pipe_address_from_name(pipe_name)
     }
 }
 

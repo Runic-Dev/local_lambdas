@@ -37,24 +37,7 @@ impl TokioProcessOrchestrator {
     }
 
     fn get_pipe_address(pipe_name: &str) -> String {
-        #[cfg(windows)]
-        {
-            format!(r"\\.\pipe\{}", pipe_name)
-        }
-
-        #[cfg(unix)]
-        {
-            format!("/tmp/{}", pipe_name)
-        }
-    }
-
-    fn get_http_port(pipe_name: &str) -> u16 {
-        // Generate a deterministic port from the pipe name
-        // Use ports in the range 9000-9999
-        let hash = pipe_name.bytes().fold(0u32, |acc, b| {
-            acc.wrapping_mul(31).wrapping_add(b as u32)
-        });
-        9000 + (hash % 1000) as u16
+        crate::domain::utils::get_pipe_address_from_name(pipe_name)
     }
 }
 
@@ -62,6 +45,7 @@ impl TokioProcessOrchestrator {
 impl ProcessOrchestrationService for TokioProcessOrchestrator {
     async fn start_process(&mut self, id: &ProcessId) -> Result<(), OrchestrationError> {
         use crate::domain::entities::CommunicationMode;
+        use crate::domain::utils::{get_pipe_address_from_name, get_http_address_from_name};
         
         let process = self
             .processes
@@ -88,14 +72,12 @@ impl ProcessOrchestrationService for TokioProcessOrchestrator {
         // Set environment variable based on communication mode
         match process.config.communication_mode {
             CommunicationMode::Pipe => {
-                let pipe_address = Self::get_pipe_address(process.config.pipe_name.as_str());
+                let pipe_address = get_pipe_address_from_name(process.config.pipe_name.as_str());
                 command.env("PIPE_ADDRESS", &pipe_address);
                 tracing::debug!("Using pipe address: {}", pipe_address);
             }
             CommunicationMode::Http => {
-                // For HTTP mode, the child process will start its own HTTP server
-                // We pass the expected address through HTTP_ADDRESS env var
-                let http_address = format!("127.0.0.1:{}", Self::get_http_port(process.config.pipe_name.as_str()));
+                let http_address = get_http_address_from_name(process.config.pipe_name.as_str());
                 command.env("HTTP_ADDRESS", &http_address);
                 tracing::debug!("Using HTTP address: {}", http_address);
             }
