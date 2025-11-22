@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <!-- Example process configuration -->
+    <!-- 
+    <process>
+        <id>example-service</id>
+        <executable>./bin/example-service.exe</executable>
+        <arg>--mode</arg>
+        <arg>production</arg>
+        <route>/api/example/*</route>
+        <pipe_name>example_service_pipe</pipe_name>
+        <working_dir>./services/example</working_dir>
+    </process>
+    -->
+    
+    <!-- Add your process configurations here -->
+    <!-- Each process will:
+         1. Be started automatically when local_lambdas starts
+         2. Receive HTTP requests matching its route pattern
+         3. Communicate via named pipe (pipe address provided in PIPE_ADDRESS env var)
+         4. Return responses that are proxied back to the HTTP client
+    -->
+</manifest>

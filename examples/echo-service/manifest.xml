@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <process>
+        <id>echo-service</id>
+        <executable>python3</executable>
+        <arg>examples/echo-service/echo_service.py</arg>
+        <route>/echo/*</route>
+        <pipe_name>echo_service_pipe</pipe_name>
+    </process>
+</manifest>
