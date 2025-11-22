@@ -15,6 +15,7 @@ import time
 import json
 import requests
 import sys
+import os
 from pathlib import Path
 
 # Configuration
@@ -136,21 +137,39 @@ def main():
     manifest_path = Path("/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/manifest.xml")
     results = []
     
-    # Case 1: Simulated cached response (baseline - direct to proxy without forwarding)
-    # This demonstrates the overhead of just the proxy itself without any process communication
-    print("\n\n### CASE 1: Baseline - Proxy Overhead (No Process Communication) ###")
-    print("Note: This measures proxy overhead when no matching route exists (404 response)")
-    print("This represents the fastest possible response - pure proxy with no forwarding.")
-    process = start_local_lambdas(manifest_path)
-    time.sleep(3)
+    # Case 1: Cached response test
+    print("\n\n### CASE 1: Cached Response Performance ###")
+    print("Starting local_lambdas with caching enabled...")
+    print("First request will populate cache, subsequent requests served from cache")
     
-    if not wait_for_server(f"{BASE_URL}/cached/test"):
+    env = {**os.environ, "ENABLE_CACHE": "true", "BIND_ADDRESS": BIND_ADDRESS}
+    process = subprocess.Popen(
+        ["cargo", "run", "--release", "--", str(manifest_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        cwd="/home/runner/work/local_lambdas/local_lambdas"
+    )
+    time.sleep(6)  # Wait for server and pipe service to start
+    
+    if not wait_for_server(f"{BASE_URL}/pipe/test"):
         print("ERROR: Server failed to start")
         process.kill()
         return
     
-    result = benchmark_requests(f"{BASE_URL}/cached/test", NUM_REQUESTS,
-                                "Case 1: Proxy baseline (no process forwarding - 404 response)", True)
+    # Prime the cache with one request
+    print("Priming cache with initial request...")
+    try:
+        response = requests.get(f"{BASE_URL}/pipe/test", timeout=5)
+        print(f"  Initial request status: {response.status_code}")
+    except Exception as e:
+        print(f"  Error priming cache: {e}")
+    
+    time.sleep(1)
+    
+    # Now benchmark cached responses
+    result = benchmark_requests(f"{BASE_URL}/pipe/test", NUM_REQUESTS,
+                                "Case 1: Cached response (no process communication)", True)
     results.append(result)
     
     process.kill()
@@ -298,13 +317,14 @@ def generate_markdown_report(results):
     
     report.append("## Key Findings\n\n")
     
-    baseline = next((r for r in results if "Case 1" in r["description"]), None)
+    cached = next((r for r in results if "Case 1" in r["description"]), None)
     
-    if baseline:
-        report.append(f"### Baseline Performance (Case 1)\n")
-        report.append(f"- **Proxy-only response time**: {baseline['avg_time_ms']:.2f}ms\n")
-        report.append(f"- This represents the overhead of the proxy itself without any process communication\n")
-        report.append(f"- All other cases include this baseline plus additional communication overhead\n\n")
+    if cached:
+        report.append(f"### Cached Response Performance (Case 1)\n")
+        report.append(f"- **Cached response time**: {cached['avg_time_ms']:.2f}ms\n")
+        report.append(f"- This represents the fastest possible response - no process communication needed\n")
+        report.append(f"- Response served directly from memory cache\n")
+        report.append(f"- **Throughput**: {cached['req_per_sec']:.2f} req/s\n\n")
     
     if pipe_warm and http_warm:
         improvement = ((http_warm["avg_time_ms"] - pipe_warm["avg_time_ms"]) / http_warm["avg_time_ms"]) * 100

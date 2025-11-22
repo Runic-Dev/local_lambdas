@@ -82,10 +82,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create proxy use case
     let processes_arc = Arc::new(processes);
-    let proxy_use_case = Arc::new(ProxyHttpRequestUseCase::new(
-        pipe_service.clone(),
-        processes_arc,
-    ));
+    
+    // Check if caching is enabled via environment variable
+    let cache_size = std::env::var("ENABLE_CACHE")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .or_else(|| {
+            // Default to 1000 entries if ENABLE_CACHE is set to "true"
+            if std::env::var("ENABLE_CACHE").ok().as_deref() == Some("true") {
+                Some(1000)
+            } else {
+                None
+            }
+        });
+    
+    let proxy_use_case = if let Some(size) = cache_size {
+        tracing::info!("Response caching enabled with {} entries", size);
+        Arc::new(ProxyHttpRequestUseCase::new_with_cache(
+            pipe_service.clone(),
+            processes_arc,
+            Some(size),
+        ))
+    } else {
+        Arc::new(ProxyHttpRequestUseCase::new(
+            pipe_service.clone(),
+            processes_arc,
+        ))
+    };
 
     // Adapters Layer - HTTP Server
     let server_state = HttpServerState::new(proxy_use_case);

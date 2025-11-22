@@ -4,6 +4,7 @@
 use crate::domain::{HttpRequest, HttpResponse, Process, ProcessId, ProcessRepository,  
                     ProcessOrchestrationService, PipeCommunicationService, Route};
 use async_trait::async_trait;
+use moka::future::Cache;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -70,18 +71,43 @@ impl<O: ProcessOrchestrationService> StopAllProcessesUseCase<O> {
 pub struct ProxyHttpRequestUseCase<P: PipeCommunicationService> {
     pipe_service: Arc<P>,
     processes: Arc<Vec<Process>>,
+    cache: Option<Cache<String, HttpResponse>>,
 }
 
 impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
     pub fn new(pipe_service: Arc<P>, processes: Arc<Vec<Process>>) -> Self {
+        Self::new_with_cache(pipe_service, processes, None)
+    }
+
+    pub fn new_with_cache(
+        pipe_service: Arc<P>,
+        processes: Arc<Vec<Process>>,
+        cache_size: Option<u64>,
+    ) -> Self {
+        let cache = cache_size.map(|size| {
+            Cache::builder()
+                .max_capacity(size)
+                .build()
+        });
+        
         Self {
             pipe_service,
             processes,
+            cache,
         }
     }
 
     /// Execute the use case: route request to appropriate process
     pub async fn execute(&self, request: HttpRequest) -> Result<HttpResponse, UseCaseError> {
+        // Check cache if enabled
+        if let Some(cache) = &self.cache {
+            let cache_key = self.generate_cache_key(&request);
+            if let Some(cached_response) = cache.get(&cache_key).await {
+                tracing::debug!("Cache hit for {}", request.path);
+                return Ok(cached_response);
+            }
+        }
+
         use crate::domain::entities::CommunicationMode;
         use crate::domain::utils::{get_pipe_address_from_name, get_http_address_from_name};
         
@@ -110,7 +136,20 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
             .map_err(|e| UseCaseError::CommunicationError(e.to_string()))?;
 
         // Deserialize response
-        self.deserialize_response(response_data)
+        let response = self.deserialize_response(response_data)?;
+
+        // Store in cache if enabled
+        if let Some(cache) = &self.cache {
+            let cache_key = self.generate_cache_key(&request);
+            cache.insert(cache_key, response.clone()).await;
+            tracing::debug!("Cached response for {}", request.path);
+        }
+
+        Ok(response)
+    }
+
+    fn generate_cache_key(&self, request: &HttpRequest) -> String {
+        format!("{}:{}", request.method.as_str(), request.path)
     }
 
     fn find_matching_process(&self, path: &str) -> Option<&Process> {

@@ -30,6 +30,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Async
 async-trait = "0.1"
 
+# Caching
+moka = { version = "0.12", features = ["future"] }
+
 # Named pipes (cross-platform)
 tokio-pipe = "0.2"
 

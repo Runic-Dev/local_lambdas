@@ -1,1 +1,15 @@
 /target
+*.dll
+*.pdb
+*.exe
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+**/bin/
+**/obj/
+*.deps.json
+*.runtimeconfig.json
