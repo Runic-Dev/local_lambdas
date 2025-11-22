@@ -89,6 +89,10 @@ BIND_ADDRESS=0.0.0.0:8080 ./target/release/local_lambdas
 
 ## Child Process Protocol
 
+Child processes can communicate using either **named pipes** or **HTTP**, depending on the `communication_mode` configuration.
+
+### Named Pipe Mode (Default)
+
 Child processes receive the pipe address through the `PIPE_ADDRESS` environment variable and must:
 
 1. **Connect to the named pipe** when ready to handle requests
@@ -112,10 +116,37 @@ Child processes receive the pipe address through the `PIPE_ADDRESS` environment 
 }
 ```
 
-### Named Pipe Addresses
-
+**Named Pipe Addresses:**
 - **Windows**: `\\.\pipe\{pipe_name}`
 - **Unix/Linux/macOS**: `/tmp/{pipe_name}`
+
+### HTTP Mode
+
+Child processes receive the HTTP address through the `HTTP_ADDRESS` environment variable (e.g., `127.0.0.1:9123`) and must:
+
+1. **Start an HTTP server** on the provided address
+2. **Accept POST requests** with the same JSON format as pipe mode
+3. **Return responses** with the same JSON format as pipe mode
+
+**Benefits:**
+- No need to implement pipe handling
+- Can use standard HTTP frameworks (Kestrel, Flask, Express, etc.)
+- Better for processes that already have an HTTP server
+
+**Trade-offs:**
+- Slower process startup (HTTP server initialization)
+- Higher memory usage
+- Slightly higher latency per request
+
+## Communication Mode Comparison
+
+| Aspect | Named Pipes | HTTP |
+|--------|-------------|------|
+| **Process startup** | ⚡ Fast (no HTTP server) | 🐌 Slower (HTTP server init) |
+| **Latency** | 🚀 Lower (direct IPC) | 📡 Higher (HTTP overhead) |
+| **Memory** | 💾 Minimal | 💾 Higher (HTTP stack) |
+| **Concurrency** | ⚠️ Single connection | ✅ Multiple connections |
+| **Use case** | Minimal microservices | Services with web frameworks |
 
 ## Example Child Process
 
