@@ -132,7 +132,7 @@ async fn test_full_orchestration_lifecycle() {
     let mut orchestrator = ProcessOrchestrator::new();
     
     // Create a simple process config that will succeed
-    let mut config = ProcessConfig {
+    let config = ProcessConfig {
         id: "sleep-test".to_string(),
         executable: "sleep".to_string(),
         args: vec!["0.5".to_string()],

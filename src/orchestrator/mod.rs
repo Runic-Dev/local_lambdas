@@ -167,7 +167,7 @@ mod tests {
         ProcessConfig {
             id: id.to_string(),
             executable: executable.to_string(),
-            args: vec![],
+            args: vec!["0.1".to_string()],
             route: "/test".to_string(),
             pipe_name: pipe_name.to_string(),
             working_dir: None,
@@ -219,8 +219,7 @@ mod tests {
     #[tokio::test]
     async fn test_start_process_success() {
         let mut orchestrator = ProcessOrchestrator::new();
-        let mut config = create_test_config("test", "sleep", "test_pipe");
-        config.args = vec!["0.1".to_string()];
+        let config = create_test_config("test", "sleep", "test_pipe");
         
         orchestrator.register(config);
         let result = orchestrator.start_process("test").await;
