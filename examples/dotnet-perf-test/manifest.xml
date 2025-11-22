@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <!-- HTTP Communication Service -->
+    <process>
+        <id>http-service</id>
+        <executable>dotnet</executable>
+        <arg>run</arg>
+        <arg>--project</arg>
+        <arg>examples/dotnet-perf-test/HttpService/HttpService.csproj</arg>
+        <route>/http/*</route>
+        <pipe_name>dotnet_http</pipe_name>
+        <communication_mode>http</communication_mode>
+    </process>
+    
+    <!-- Named Pipe Communication Service -->
+    <process>
+        <id>pipe-service</id>
+        <executable>dotnet</executable>
+        <arg>run</arg>
+        <arg>--project</arg>
+        <arg>examples/dotnet-perf-test/PipeService/PipeService.csproj</arg>
+        <route>/pipe/*</route>
+        <pipe_name>dotnet_pipe</pipe_name>
+        <communication_mode>pipe</communication_mode>
+    </process>
+</manifest>

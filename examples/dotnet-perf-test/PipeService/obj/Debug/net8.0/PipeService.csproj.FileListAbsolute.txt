@@ -1,0 +1,15 @@
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/bin/Debug/net8.0/PipeService
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/bin/Debug/net8.0/PipeService.deps.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/bin/Debug/net8.0/PipeService.runtimeconfig.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/bin/Debug/net8.0/PipeService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/bin/Debug/net8.0/PipeService.pdb
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.AssemblyInfoInputs.cache
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.AssemblyInfo.cs
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.csproj.CoreCompileInputs.cache
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.sourcelink.json
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/refint/PipeService.dll
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.pdb
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/PipeService.genruntimeconfig.cache
+/home/runner/work/local_lambdas/local_lambdas/examples/dotnet-perf-test/PipeService/obj/Debug/net8.0/ref/PipeService.dll
