@@ -13,3 +13,6 @@ obj/
 **/obj/
 *.deps.json
 *.runtimeconfig.json
+__pycache__/
+*.pyc
+*.pyo
