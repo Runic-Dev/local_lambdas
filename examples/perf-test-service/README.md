@@ -81,6 +81,14 @@ hey -n 1000 -c 10 http://localhost:3000/http/test
 - ✓ **Better scalability** - can handle concurrent connections
 - ⚠ **Higher memory usage** - HTTP server in memory
 
+**Note**: For comprehensive performance results with actual response times, see the `.NET Performance Tests` in `examples/dotnet-perf-test/`. Running those tests generates detailed reports with:
+- Average response times per test case
+- P50/P95/P99 latency percentiles
+- Throughput metrics
+- Comparative analysis between HTTP and Named Pipe modes
+
+The generated `PERFORMANCE_RESULTS.md` includes a conclusion section with actual measured response times.
+
 ## Requirements
 
 - Python 3.6+

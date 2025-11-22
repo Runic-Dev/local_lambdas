@@ -414,21 +414,52 @@ def generate_markdown_report(results):
     report.append("- Standard HTTP tooling/monitoring is important\n\n")
     
     report.append("## Conclusions\n\n")
+    report.append("### Performance Summary - Response Times Per Test\n\n")
+    
+    # Create a summary table with all test results
+    report.append("| Test Case | Avg Response Time | P50 (Median) | P95 | P99 | Throughput |\n")
+    report.append("|-----------|-------------------|--------------|-----|-----|------------|\n")
+    
+    for result in results:
+        case_name = result['description'].split(':')[0] if ':' in result['description'] else result['description']
+        report.append(f"| {case_name} | **{result['avg_time_ms']:.2f}ms** | ")
+        if result.get('p50_ms', 0) > 0:
+            report.append(f"{result['p50_ms']:.2f}ms | {result['p95_ms']:.2f}ms | {result['p99_ms']:.2f}ms | ")
+        else:
+            report.append("N/A | N/A | N/A | ")
+        report.append(f"{result['req_per_sec']:.2f} req/s |\n")
+    
+    report.append("\n### Key Insights\n\n")
+    
+    if cached:
+        report.append(f"1. **Caching provides the fastest response times**: {cached['avg_time_ms']:.2f}ms average ")
+        report.append(f"(P50: {cached['p50_ms']:.2f}ms, P95: {cached['p95_ms']:.2f}ms, P99: {cached['p99_ms']:.2f}ms) - ")
+        report.append("eliminates all process communication overhead\n\n")
     
     if http_warm and pipe_warm and http_cold and pipe_cold:
-        report.append(f"1. **Named pipes are significantly faster** with {pipe_warm['avg_time_ms']:.2f}ms vs ")
-        report.append(f"{http_warm['avg_time_ms']:.2f}ms average response time for warm processes\n\n")
+        improvement = ((http_warm['avg_time_ms'] - pipe_warm['avg_time_ms']) / http_warm['avg_time_ms']) * 100
+        report.append(f"2. **Named pipes are significantly faster for warm processes**: ")
+        report.append(f"{pipe_warm['avg_time_ms']:.2f}ms average (P50: {pipe_warm['p50_ms']:.2f}ms, ")
+        report.append(f"P95: {pipe_warm['p95_ms']:.2f}ms, P99: {pipe_warm['p99_ms']:.2f}ms) vs ")
+        report.append(f"HTTP {http_warm['avg_time_ms']:.2f}ms average (P50: {http_warm['p50_ms']:.2f}ms, ")
+        report.append(f"P95: {http_warm['p95_ms']:.2f}ms, P99: {http_warm['p99_ms']:.2f}ms)")
+        if improvement > 0:
+            report.append(f" - **{improvement:.1f}% faster**\n\n")
+        else:
+            report.append("\n\n")
         
-        report.append(f"2. **Cold start impact is substantial for HTTP services** due to Kestrel initialization, ")
-        report.append(f"while named pipe services start almost instantly\n\n")
+        report.append(f"3. **Cold start impact is substantial for HTTP services**: ")
+        report.append(f"HTTP cold start averaged {http_cold['avg_time_ms']:.2f}ms (P95: {http_cold['p95_ms']:.2f}ms) ")
+        report.append(f"vs Named Pipe cold start at {pipe_cold['avg_time_ms']:.2f}ms (P95: {pipe_cold['p95_ms']:.2f}ms) ")
+        report.append("due to Kestrel web server initialization\n\n")
         
-        report.append(f"3. **The web server tax is real**: Every HTTP service pays a performance penalty ")
+        report.append(f"4. **The web server tax is measurable**: Every HTTP service pays a performance penalty ")
         report.append(f"for web server initialization and HTTP protocol overhead\n\n")
     
-    report.append("4. **Architectural implications**: For process-based microservices architectures, ")
+    report.append("5. **Architectural implications**: For process-based microservices architectures, ")
     report.append("the communication protocol choice has significant performance implications\n\n")
     
-    report.append("5. **No HTTP dependencies verification**: The named pipe service was confirmed to have ")
+    report.append("6. **No HTTP dependencies verification**: The named pipe service was confirmed to have ")
     report.append("ZERO HTTP/web packages, proving it's truly minimal\n\n")
     
     report.append("## Technical Details\n\n")
