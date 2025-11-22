@@ -31,6 +31,10 @@ pub struct ProcessConfig {
     /// Working directory for the process
     #[serde(default)]
     pub working_dir: Option<String>,
+    
+    /// Communication mode: "pipe" or "http" (default: "pipe")
+    #[serde(default)]
+    pub communication_mode: String,
 }
 
 impl Manifest {

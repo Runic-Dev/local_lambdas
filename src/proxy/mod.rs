@@ -232,6 +232,7 @@ mod tests {
             route: route.to_string(),
             pipe_name: pipe_name.to_string(),
             working_dir: None,
+            communication_mode: "pipe".to_string(),
         }
     }
 

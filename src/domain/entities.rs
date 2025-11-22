@@ -9,6 +9,7 @@ pub struct Process {
     pub route: Route,
     pub pipe_name: PipeName,
     pub working_directory: Option<WorkingDirectory>,
+    pub communication_mode: CommunicationMode,
 }
 
 /// Value object for process identifier
@@ -115,6 +116,21 @@ impl WorkingDirectory {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+/// Communication mode for process interaction
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CommunicationMode {
+    /// Use named pipes (Unix sockets or Windows named pipes)
+    Pipe,
+    /// Use HTTP protocol
+    Http,
+}
+
+impl Default for CommunicationMode {
+    fn default() -> Self {
+        CommunicationMode::Pipe
     }
 }
 
