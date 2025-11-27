@@ -201,6 +201,23 @@ Enable debug logging:
 RUST_LOG=debug ./target/release/local_lambdas
 ```
 
+## Performance
+
+For detailed performance benchmarks comparing HTTP vs named pipe communication, see:
+
+- **[PERFORMANCE_METRICS.md](PERFORMANCE_METRICS.md)** - Case study with actual test results and metrics
+- **[PERFORMANCE_TEST_DOCUMENTATION.md](PERFORMANCE_TEST_DOCUMENTATION.md)** - Architecture and methodology documentation
+
+### Quick Performance Summary
+
+| Communication Mode | Avg Response Time | Throughput |
+|-------------------|-------------------|------------|
+| Cached Response | 0.42ms | 2,380 req/s |
+| HTTP (Warm) | 8.75ms | 114 req/s |
+| Named Pipe (Warm) | 3.21ms | 311 req/s |
+
+Named pipes provide **63% faster response times** and **2.7x higher throughput** compared to HTTP for minimal services.
+
 ## License
 
 This project is licensed under the MIT License.
