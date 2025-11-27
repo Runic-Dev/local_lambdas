@@ -50,6 +50,8 @@ dotnet-perf-test/
 │   └── Program.cs
 ├── manifest.xml          # Configuration for local_lambdas
 ├── run_performance_tests.py  # Main performance test script
+├── PERFORMANCE_RESULTS.md    # Generated detailed results (after running tests)
+├── performance_results.json  # Generated raw JSON data (after running tests)
 └── README.md            # This file
 ```
 
@@ -61,6 +63,7 @@ dotnet-perf-test/
 - Rust (cargo)
 - Python 3.6+
 - requests library: `pip install requests`
+- psutil library (optional, for memory/CPU metrics): `pip install psutil`
 
 ### Build Services
 
@@ -89,11 +92,45 @@ Or from the repository root:
 ```
 
 The test will:
-1. Build local_lambdas in release mode
-2. Run each test case with 100 requests (plus warmup)
-3. Measure latency and throughput
-4. Save results to `performance_results.json`
-5. Generate a detailed markdown report: `PERFORMANCE_RESULTS.md`
+1. Collect system information (platform, CPU, memory)
+2. Build local_lambdas in release mode
+3. Run each test case with 50 requests (plus warmup)
+4. Measure detailed metrics per test case
+5. Save raw results to `performance_results.json`
+6. Generate a comprehensive markdown report: `PERFORMANCE_RESULTS.md`
+
+## Metrics Collected
+
+### Response Time Metrics
+- **Average**: Mean response time across all requests
+- **Standard Deviation**: Measure of response time variability
+- **Variance**: Square of standard deviation
+- **Min/Max**: Fastest and slowest response times
+- **Range**: Difference between max and min
+
+### Percentile Distribution
+- **P10, P25, P50 (median), P75, P90, P95, P99, P99.9**
+- Complete latency distribution for tail latency analysis
+
+### Memory Metrics (requires psutil)
+- **RSS (Resident Set Size)**: Physical memory used
+- **VMS (Virtual Memory Size)**: Total virtual memory
+- **Memory Growth**: Change during test execution
+- **Child Processes**: Number of spawned processes
+
+### CPU Metrics (requires psutil)
+- **Average CPU**: Mean utilization during test
+- **Max CPU**: Peak utilization
+- **Min CPU**: Minimum utilization
+
+### Throughput Metrics
+- **Requests per Second**: Overall throughput
+- **Response Size**: Average payload size
+- **Data Throughput**: Bytes per second
+
+### Distribution Histogram
+- ASCII histogram of response time distribution
+- 10 bins covering the range from min to max response time
 
 ## Expected Results
 
@@ -110,6 +147,34 @@ The test will:
 ### Cached Responses (Case 1)
 - **Lowest latency**: No process communication at all
 - **Highest throughput**: Response served directly from memory
+
+## Generated Report
+
+The `PERFORMANCE_RESULTS.md` report includes:
+
+### Summary Tables
+- Response time comparison across all test cases
+- Memory usage comparison (if psutil available)
+- CPU usage comparison (if psutil available)
+
+### Detailed Per-Test Analysis
+- Request metrics (success rate, status codes)
+- Response time statistics
+- Percentile distribution table
+- Throughput metrics
+- Response time histogram (ASCII visualization)
+- Memory and CPU metrics (if available)
+
+### Comparative Analysis
+- HTTP vs Named Pipe (warm process) comparison
+- Cold start performance analysis
+- Cache effectiveness analysis
+- Percentage improvements with calculations
+
+### Conclusions
+- Summary of key findings
+- Actionable recommendations
+- Technical details and methodology
 
 ## Understanding the Results
 
@@ -151,6 +216,7 @@ Uses only standard .NET libraries:
 - Each test includes warmup requests to ensure JIT compilation
 - Cold start times are measured separately from throughput tests
 - All .NET processes use the same .NET 8.0 runtime
+- Install psutil for memory and CPU metrics collection
 
 ## Troubleshooting
 
@@ -176,4 +242,12 @@ Check that the manifest paths are correct and .NET is installed:
 
 ```bash
 dotnet --version  # Should show 8.0 or higher
+```
+
+### Missing Memory/CPU Metrics
+
+Install psutil for complete metrics:
+
+```bash
+pip install psutil
 ```
