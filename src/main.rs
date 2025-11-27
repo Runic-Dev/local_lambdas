@@ -1,5 +1,5 @@
-/// Main entry point using Clean Architecture
-/// This file is part of the outermost layer (Frameworks & Drivers)
+//! Main entry point using Clean Architecture
+//! This file is part of the outermost layer (Frameworks & Drivers)
 
 mod domain;
 mod use_cases;
@@ -7,9 +7,13 @@ mod adapters;
 mod infrastructure;
 
 // Legacy modules for backward compatibility
+#[allow(dead_code)]
 mod config;
+#[allow(dead_code)]
 mod orchestrator;
+#[allow(dead_code)]
 mod pipes;
+#[allow(dead_code)]
 mod proxy;
 
 use adapters::{XmlProcessRepository, TokioProcessOrchestrator, HttpServerState};

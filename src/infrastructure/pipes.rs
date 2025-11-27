@@ -1,5 +1,5 @@
-/// Named pipe communication adapter
-/// Implements PipeCommunicationService using platform-specific named pipes
+//! Named pipe communication adapter
+//! Implements PipeCommunicationService using platform-specific named pipes
 
 use crate::domain::repositories::{PipeCommunicationService, CommunicationError};
 use async_trait::async_trait;
@@ -11,6 +11,12 @@ use tokio::net::UnixStream;
 /// Implementation using platform-specific named pipes
 #[derive(Clone)]
 pub struct NamedPipeClient;
+
+impl Default for NamedPipeClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl NamedPipeClient {
     pub fn new() -> Self {

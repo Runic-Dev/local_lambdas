@@ -15,6 +15,12 @@ struct ManagedProcess {
     child: Option<Child>,
 }
 
+impl Default for ProcessOrchestrator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProcessOrchestrator {
     /// Create a new process orchestrator
     pub fn new() -> Self {
@@ -111,11 +117,6 @@ impl ProcessOrchestrator {
         }
 
         Ok(())
-    }
-
-    /// Get the pipe address for a given pipe name
-    fn get_pipe_address(&self, pipe_name: &str) -> String {
-        Self::get_pipe_address_static(pipe_name)
     }
 
     /// Static method to get pipe address

@@ -1,9 +1,8 @@
-/// Use Cases - Application-specific business rules
-/// Uses domain entities and repository interfaces
+//! Use Cases - Application-specific business rules
+//! Uses domain entities and repository interfaces
 
-use crate::domain::{HttpRequest, HttpResponse, Process, ProcessId, ProcessRepository,  
-                    ProcessOrchestrationService, PipeCommunicationService, Route};
-use async_trait::async_trait;
+use crate::domain::{HttpRequest, HttpResponse, Process, ProcessRepository,  
+                    ProcessOrchestrationService, PipeCommunicationService};
 use moka::future::Cache;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -205,9 +204,6 @@ impl<P: PipeCommunicationService> ProxyHttpRequestUseCase<P> {
         })
     }
 
-    fn get_pipe_address(pipe_name: &str) -> String {
-        crate::domain::utils::get_pipe_address_from_name(pipe_name)
-    }
 }
 
 /// Use case errors

@@ -1,5 +1,6 @@
-/// Performance comparison E2E tests
-/// Tests the performance difference between HTTP and named pipe communication modes
+//! Performance comparison E2E tests
+//! Tests the performance difference between HTTP and named pipe communication modes
+#![allow(deprecated)]
 
 use assert_cmd::Command;
 use std::fs::File;

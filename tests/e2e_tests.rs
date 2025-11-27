@@ -1,10 +1,12 @@
-/// End-to-end tests for local_lambdas
-/// These tests verify the complete system can be built and run
+//! End-to-end tests for local_lambdas
+//! These tests verify the complete system can be built and run
+#![allow(deprecated)]
 
-use assert_cmd::Command;
+use assert_cmd::cargo::CommandCargoExt;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::Command;
 use std::time::Duration;
 use tempfile::TempDir;
 
@@ -32,11 +34,13 @@ fn test_with_valid_empty_manifest() {
     let manifest_path = create_test_manifest(&temp_dir, xml);
     
     let mut cmd = Command::cargo_bin("local_lambdas").unwrap();
-    cmd.arg(manifest_path.to_str().unwrap())
-        .timeout(Duration::from_millis(500));
+    cmd.arg(manifest_path.to_str().unwrap());
     
     // Just verify it doesn't crash immediately
-    let _ = cmd.output();
+    // We use spawn with a timeout to avoid waiting indefinitely
+    let mut child = cmd.spawn().unwrap();
+    std::thread::sleep(Duration::from_millis(500));
+    let _ = child.kill();
 }
 
 #[test]
@@ -47,12 +51,21 @@ fn test_with_invalid_xml() {
     let manifest_path = create_test_manifest(&temp_dir, invalid_xml);
     
     let mut cmd = Command::cargo_bin("local_lambdas").unwrap();
-    cmd.arg(manifest_path.to_str().unwrap())
-        .timeout(Duration::from_secs(1));
+    cmd.arg(manifest_path.to_str().unwrap());
     
-    let output = cmd.output().unwrap();
-    // Should fail due to invalid XML
-    assert!(!output.status.success());
+    let mut child = cmd.spawn().unwrap();
+    std::thread::sleep(Duration::from_secs(1));
+    
+    // Try to wait and see if it exited
+    match child.try_wait() {
+        Ok(Some(status)) => {
+            // Should fail due to invalid XML
+            assert!(!status.success());
+        }
+        _ => {
+            let _ = child.kill();
+        }
+    }
 }
 
 #[test]
@@ -72,9 +85,10 @@ fn test_with_process_manifest() {
     let manifest_path = create_test_manifest(&temp_dir, xml);
     
     let mut cmd = Command::cargo_bin("local_lambdas").unwrap();
-    cmd.arg(manifest_path.to_str().unwrap())
-        .timeout(Duration::from_millis(500));
+    cmd.arg(manifest_path.to_str().unwrap());
     
     // Just verify it starts without crashing
-    let _ = cmd.output();
+    let mut child = cmd.spawn().unwrap();
+    std::thread::sleep(Duration::from_millis(500));
+    let _ = child.kill();
 }

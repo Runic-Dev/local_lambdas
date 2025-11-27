@@ -11,7 +11,6 @@ use axum::{
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use base64::{Engine as _, engine::general_purpose};
-use serde_json;
 
 /// HTTP proxy server state
 #[derive(Clone)]
@@ -75,8 +74,7 @@ impl ProxyState {
         }
 
         // Handle wildcard patterns (e.g., "/api/*")
-        if pattern.ends_with("/*") {
-            let prefix = &pattern[..pattern.len() - 2];
+        if let Some(prefix) = pattern.strip_suffix("/*") {
             return path.starts_with(prefix);
         }
 

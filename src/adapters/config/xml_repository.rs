@@ -1,5 +1,5 @@
-/// Config adapter - implements ProcessRepository using XML files
-/// This is an infrastructure adapter
+//! Config adapter - implements ProcessRepository using XML files
+//! This is an infrastructure adapter
 
 use crate::domain::repositories::{ProcessRepository, RepositoryError};
 use crate::domain::entities::{Process, ProcessId, Executable, Route, PipeName, WorkingDirectory, CommunicationMode};
@@ -36,7 +36,7 @@ impl ProcessRepository for XmlProcessRepository {
         manifest
             .processes
             .into_iter()
-            .map(|dto| dto.to_domain())
+            .map(|dto| dto.into_domain())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| RepositoryError::ParseError(e.to_string()))
     }
@@ -65,7 +65,7 @@ struct ProcessDto {
 }
 
 impl ProcessDto {
-    fn to_domain(self) -> Result<Process, String> {
+    fn into_domain(self) -> Result<Process, String> {
         let communication_mode = match self.communication_mode.as_deref() {
             Some("http") => CommunicationMode::Http,
             Some("pipe") | None => CommunicationMode::Pipe,

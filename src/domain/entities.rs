@@ -1,4 +1,4 @@
-/// Domain entities - pure business logic with no external dependencies
+//! Domain entities - pure business logic with no external dependencies
 
 /// Represents a configured process to be orchestrated
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -120,18 +120,13 @@ impl WorkingDirectory {
 }
 
 /// Communication mode for process interaction
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum CommunicationMode {
     /// Use named pipes (Unix sockets or Windows named pipes)
+    #[default]
     Pipe,
     /// Use HTTP protocol
     Http,
-}
-
-impl Default for CommunicationMode {
-    fn default() -> Self {
-        CommunicationMode::Pipe
-    }
 }
 
 /// HTTP request representation
@@ -179,6 +174,7 @@ pub struct HttpResponse {
 
 /// Domain errors
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
 pub enum DomainError {
     InvalidProcessId(String),
     InvalidExecutable(String),

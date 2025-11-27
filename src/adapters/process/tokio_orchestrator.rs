@@ -1,5 +1,5 @@
-/// Process orchestration adapter - implements ProcessOrchestrationService
-/// This manages the lifecycle of child processes
+//! Process orchestration adapter - implements ProcessOrchestrationService
+//! This manages the lifecycle of child processes
 
 use crate::domain::repositories::{ProcessOrchestrationService, OrchestrationError};
 use crate::domain::entities::{Process, ProcessId};
@@ -18,6 +18,12 @@ struct ManagedProcess {
     child: Option<Child>,
 }
 
+impl Default for TokioProcessOrchestrator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TokioProcessOrchestrator {
     pub fn new() -> Self {
         Self {
@@ -34,10 +40,6 @@ impl TokioProcessOrchestrator {
                 child: None,
             },
         );
-    }
-
-    fn get_pipe_address(pipe_name: &str) -> String {
-        crate::domain::utils::get_pipe_address_from_name(pipe_name)
     }
 }
 

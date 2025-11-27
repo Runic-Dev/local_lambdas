@@ -1,5 +1,5 @@
-/// Utility functions for communication addressing
-/// These functions generate consistent addresses for different communication modes
+//! Utility functions for communication addressing
+//! These functions generate consistent addresses for different communication modes
 
 /// Generate a deterministic HTTP port from a pipe name
 /// Uses ports in the range 9000-9999

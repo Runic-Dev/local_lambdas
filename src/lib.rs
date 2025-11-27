@@ -13,7 +13,11 @@ pub mod adapters;
 pub mod infrastructure;
 
 // Legacy modules for backward compatibility
+#[allow(dead_code)]
 pub mod config;
+#[allow(dead_code)]
 pub mod orchestrator;
+#[allow(dead_code)]
 pub mod pipes;
+#[allow(dead_code)]
 pub mod proxy;
