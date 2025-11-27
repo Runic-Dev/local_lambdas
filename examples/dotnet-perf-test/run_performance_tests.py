@@ -204,7 +204,7 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
     success_count = 0
     error_count = 0
     individual_times = []
-    response_sizes = []
+    successful_response_sizes = []
     status_codes = {}
     
     for i in range(num_requests):
@@ -212,8 +212,6 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
         try:
             response = requests.get(url, timeout=5)
             req_time = (time.time() - req_start) * 1000  # ms
-            individual_times.append(req_time)
-            response_sizes.append(len(response.content))
             
             # Track status codes
             code = response.status_code
@@ -221,18 +219,21 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
             
             if response.status_code == 200:
                 success_count += 1
+                # Only record times and sizes for successful requests
+                individual_times.append(req_time)
+                successful_response_sizes.append(len(response.content))
             else:
                 error_count += 1
                 
-            # Sample CPU usage periodically
-            if process_pid and HAS_PSUTIL and i % 10 == 0:
-                cpu = get_process_cpu_percent(process_pid, interval=0.1)
+            # Sample CPU usage periodically (reduced frequency to minimize test interference)
+            if process_pid and HAS_PSUTIL and i % 20 == 0:
+                cpu = get_process_cpu_percent(process_pid, interval=0.05)
                 if cpu is not None:
                     cpu_during_test.append(cpu)
                     
         except Exception as e:
             error_count += 1
-            individual_times.append(5000)  # Timeout value
+            # Don't add timeout value for errors - exclude from timing stats
             if i < 3:  # Only print first few errors
                 print(f"  Error on request {i+1}: {e}")
     
@@ -261,8 +262,8 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
     p99 = calculate_percentile(sorted_times, 99)
     p999 = calculate_percentile(sorted_times, 99.9)
     
-    # Response size statistics
-    avg_response_size = sum(response_sizes) / len(response_sizes) if response_sizes else 0
+    # Response size statistics (from successful requests only)
+    avg_response_size = sum(successful_response_sizes) / len(successful_response_sizes) if successful_response_sizes else 0
     
     # Histogram bins
     histogram = calculate_histogram_bins(individual_times, num_bins=10)
@@ -333,8 +334,8 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
         "throughput": {
             "requests_per_second": req_per_sec,
             "avg_response_size_bytes": avg_response_size,
-            "total_bytes_received": sum(response_sizes),
-            "bytes_per_second": sum(response_sizes) / elapsed_time if elapsed_time > 0 else 0,
+            "total_bytes_received": sum(successful_response_sizes),
+            "bytes_per_second": sum(successful_response_sizes) / elapsed_time if elapsed_time > 0 else 0,
         },
         
         # Distribution histogram
@@ -369,7 +370,7 @@ def benchmark_requests(url, num_requests, description, measure_individual=False,
                 "vms_mb": mem_after["vms_mb"],
                 "num_child_processes": mem_after["num_children"],
             },
-            "memory_growth_mb": (mem_after["rss_mb"] - mem_before["rss_mb"]) if mem_before else None,
+            "memory_growth_mb": (mem_after["rss_mb"] - mem_before["rss_mb"]) if (mem_before and mem_after) else None,
         }
     
     # CPU metrics
@@ -781,14 +782,16 @@ def generate_markdown_report(results, test_metadata):
         
         # Response Time Distribution Histogram
         histogram = result.get('histogram', [])
-        if histogram:
+        if histogram and any(bin.get('count', 0) > 0 for bin in histogram):
             report.append("#### Response Time Distribution\n\n")
             report.append("```\n")
-            max_count = max(bin['count'] for bin in histogram) if histogram else 1
+            max_count = max((bin.get('count', 0) for bin in histogram), default=1)
+            max_count = max(max_count, 1)  # Ensure we never divide by zero
             for bin in histogram:
-                bar_len = int((bin['count'] / max_count) * 40) if max_count > 0 else 0
+                count = bin.get('count', 0)
+                bar_len = int((count / max_count) * 40)
                 bar = '█' * bar_len
-                report.append(f"{bin['range']:>18} ms | {bar:<40} | {bin['count']:>4} ({bin['percentage']:>5.1f}%)\n")
+                report.append(f"{bin['range']:>18} ms | {bar:<40} | {count:>4} ({bin.get('percentage', 0):>5.1f}%)\n")
             report.append("```\n\n")
         
         # Memory metrics
