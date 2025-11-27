@@ -1,5 +1,5 @@
-/// HTTP adapter - Axum-based HTTP server controller
-/// This is an interface adapter that translates HTTP requests to use cases
+//! HTTP adapter - Axum-based HTTP server controller
+//! This is an interface adapter that translates HTTP requests to use cases
 
 use crate::domain::entities::{HttpRequest, HttpResponse, HttpMethod};
 use crate::use_cases::ProxyHttpRequestUseCase;

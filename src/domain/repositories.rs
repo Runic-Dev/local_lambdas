@@ -1,7 +1,7 @@
-/// Repository interfaces (Ports) - define contracts without implementation
-/// These follow the Dependency Inversion Principle
+//! Repository interfaces (Ports) - define contracts without implementation
+//! These follow the Dependency Inversion Principle
 
-use crate::domain::entities::{HttpRequest, HttpResponse, Process, ProcessId};
+use crate::domain::entities::{Process, ProcessId};
 use async_trait::async_trait;
 
 /// Repository for managing process configurations
@@ -21,6 +21,7 @@ pub trait ProcessOrchestrationService: Send + Sync {
     async fn stop_process(&mut self, id: &ProcessId) -> Result<(), OrchestrationError>;
     
     /// Check if a process is running
+    #[allow(dead_code)]
     fn is_running(&self, id: &ProcessId) -> bool;
     
     /// Start all registered processes
@@ -43,6 +44,7 @@ pub trait PipeCommunicationService: Send + Sync {
 
 /// Repository errors
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum RepositoryError {
     NotFound(String),
     ParseError(String),
@@ -63,6 +65,7 @@ impl std::error::Error for RepositoryError {}
 
 /// Orchestration errors
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum OrchestrationError {
     ProcessNotFound(String),
     AlreadyRunning(String),
@@ -87,6 +90,7 @@ impl std::error::Error for OrchestrationError {}
 
 /// Communication errors
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum CommunicationError {
     ConnectionFailed(String),
     SendFailed(String),

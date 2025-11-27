@@ -1,14 +1,22 @@
-/// HTTP communication adapter
-/// Implements PipeCommunicationService using HTTP protocol
+//! HTTP communication adapter
+//! Implements PipeCommunicationService using HTTP protocol
 
 use crate::domain::repositories::{PipeCommunicationService, CommunicationError};
 use async_trait::async_trait;
 
 /// Implementation using HTTP protocol
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct HttpClient;
 
+impl Default for HttpClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HttpClient {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self
     }

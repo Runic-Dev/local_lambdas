@@ -10,6 +10,7 @@ use tokio::net::windows::named_pipe::{ServerOptions, NamedPipeServer};
 
 /// Cross-platform named pipe server
 pub struct PipeServer {
+    #[allow(dead_code)]
     pipe_name: String,
     #[cfg(unix)]
     path: PathBuf,
