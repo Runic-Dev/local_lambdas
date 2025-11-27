@@ -263,17 +263,123 @@ The test will:
 
 **Note**: Detailed performance results with actual response times (average, P50, P95, P99) for each test case are automatically generated when you run the performance tests. The test script generates:
 
-- `performance_results.json` - Raw performance data in JSON format
-- `PERFORMANCE_RESULTS.md` - Comprehensive markdown report with:
-  - **Response time summary table** showing all test cases with avg/median/P95/P99 latencies
-  - **Detailed per-test metrics** including throughput and percentile breakdowns
-  - **Comparative analysis** between HTTP and Named Pipe modes
+- `performance_results.json` - Raw performance data in JSON format with full metrics
+- `PERFORMANCE_RESULTS.md` - Comprehensive markdown report with detailed analysis
+
+#### Generated Report Contents
+
+The `PERFORMANCE_RESULTS.md` report includes:
+
+**System Information**
+- Platform details (OS, architecture)
+- CPU cores (physical and logical)
+- Total and available memory
+- Python version used for testing
+
+**Response Time Metrics (per test case)**
+- Average, minimum, maximum response times
+- Standard deviation and variance
+- Complete percentile distribution: P10, P25, P50 (median), P75, P90, P95, P99, P99.9
+- Response time distribution histograms (ASCII visualization)
+
+**Memory Usage Metrics**
+- RSS (Resident Set Size) in MB
+- VMS (Virtual Memory Size) in MB
+- Memory growth during test execution
+- Number of child processes
+
+**CPU Utilization**
+- Average CPU usage during test
+- Peak (maximum) CPU usage
+- Minimum CPU usage
+
+**Throughput Metrics**
+- Requests per second
+- Average response size in bytes
+- Total data transferred
+- Bytes per second throughput
+
+**Comparative Analysis**
+- HTTP vs Named Pipe comparison tables
+- Cold start performance analysis
+- Cache effectiveness analysis
+- Percentage improvements with statistical significance
 
 To see the actual test results, run:
 ```bash
 cd examples/dotnet-perf-test
+pip install psutil  # Optional: for memory/CPU metrics
 ./run_performance_tests.py
 cat PERFORMANCE_RESULTS.md
+```
+
+#### Sample Output Structure
+
+The generated report follows this structure:
+
+```markdown
+# Comprehensive Performance Test Results
+## local_lambdas with .NET Services
+
+## Test Information
+| Parameter | Value |
+|-----------|-------|
+| Test Date | 2024-XX-XX HH:MM:SS |
+| Number of Requests | 50 |
+| Warmup Requests | 5 |
+
+### Test Environment
+| System Property | Value |
+|-----------------|-------|
+| Platform | Linux 6.x.x |
+| Architecture | x86_64 |
+| CPU Cores | 2 physical, 4 logical |
+| Total Memory | 7.8 GB |
+
+## Performance Summary
+### Response Time Comparison
+| Test Case | Avg | Std Dev | Min | Max | P50 | P95 | P99 | P99.9 | Throughput |
+|-----------|-----|---------|-----|-----|-----|-----|-----|-------|------------|
+| Case 1 | X.XXms | X.XXms | ... | ... | ... | ... | ... | ... | XXX req/s |
+| Case 2 | X.XXms | X.XXms | ... | ... | ... | ... | ... | ... | XXX req/s |
+...
+
+## Detailed Test Results
+### Case 1: Cached response
+#### Request Metrics
+| Metric | Value |
+|--------|-------|
+| Total Test Duration | X.XXX seconds |
+| Successful Requests | 50 (100.0%) |
+...
+
+#### Response Time Statistics (milliseconds)
+| Statistic | Value |
+|-----------|-------|
+| Average | X.XXXX ms |
+| Standard Deviation | X.XXXX ms |
+| Variance | X.XXXX ms² |
+...
+
+#### Response Time Distribution
+```
+ 0.50-1.00 ms | ████████████████████████████████████████ |   45 ( 90.0%)
+ 1.00-1.50 ms | ████                                     |    4 (  8.0%)
+ 1.50-2.00 ms | █                                        |    1 (  2.0%)
+```
+
+## Comparative Analysis
+### HTTP vs Named Pipe (Warm Process)
+| Metric | HTTP | Named Pipe | Difference |
+|--------|------|------------|------------|
+| Average Response Time | X.XX ms | X.XX ms | X.XX ms (XX.X%) |
+...
+
+## Conclusions
+### Summary of Key Findings
+1. Response Caching: Provides the fastest response times...
+2. Named Pipes Outperform HTTP: XX.X% faster...
+...
 ```
 
 The generated report includes a conclusion section with actual response times measured during the test run, providing concrete performance data for each of the 5 test scenarios.
@@ -294,14 +400,17 @@ The generated report includes a conclusion section with actual response times me
 - **HTTP Service Dependencies**: ASP.NET Core (Kestrel)
 - **Pipe Service Dependencies**: None (uses only built-in .NET libraries)
 - **Cache Implementation**: moka 0.12 (Rust LRU cache)
+- **Performance Test Dependencies**: Python 3.6+, requests, psutil (optional)
 
 ## Files Created
 
 - `/examples/dotnet-perf-test/HttpService/` - .NET HTTP service with Kestrel
 - `/examples/dotnet-perf-test/PipeService/` - .NET named pipe service (no HTTP deps)
 - `/examples/dotnet-perf-test/manifest.xml` - Configuration for performance tests
-- `/examples/dotnet-perf-test/run_performance_tests.py` - Performance test script
+- `/examples/dotnet-perf-test/run_performance_tests.py` - Performance test script with detailed metrics
 - `/examples/dotnet-perf-test/README.md` - Documentation
+- `/examples/dotnet-perf-test/PERFORMANCE_RESULTS.md` - Generated detailed results (after running tests)
+- `/examples/dotnet-perf-test/performance_results.json` - Generated raw JSON data (after running tests)
 - `/src/use_cases/mod.rs` - Updated with caching support
 - `/.github/workflows/test.yml` - CI/CD test automation
 
